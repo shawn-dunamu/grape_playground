@@ -1,0 +1,775 @@
+<script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pusher/5.0.2/pusher.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-quill/0.4.1/react-quill.js"></script>
+
+<link 
+rel="stylesheet" href="https://d2mkevusy1mb28.cloudfront.net/turnchat/assets/design_guideline_snowball-886a7c88eeadf693820a27fd8abde545ebf451ab2414c72c9255e5bc928f2f00.css"
+/>
+
+<style>
+  body,
+  span,
+  textarea,
+  input,
+  p, h1, h2, h3, h4, h5, div,
+  h6 {
+    font-family: 'Arial' !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-font-smoothing: antialiased;
+    -o-font-smoothing: antialiased;
+    line-height:1.5;
+    font-style: normal;
+    font-stretch: normal;
+    letter-spacing: normal;
+  }
+
+  .hover_bg:hover{
+    background-color:black;
+    color:white;
+  }
+
+  .floatingRightBar{
+    transition: 0.5s all;
+  }
+
+  .toastDefaultClass{
+    display:none;
+    visibility:none;
+    background-color:red;
+    transition:all 5s;
+    bottom: 10px;
+  }
+
+  .toastDefaultClass.show{
+    display:flex;
+    background-color:black;
+    color:white;
+    font-size:16px;
+    padding:20px;
+    border-radius:6px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:50px;
+    animation: flickerAnimation 2s;
+    animation-fill-mode: forwards;
+    bottom:20px;
+  }
+
+  @keyframes flickerAnimation {
+    0%   { opacity:0; visilibity: none; }
+    50%  { opacity:1; visibility: visible; display:flex;}
+    100% { opacity:0; visibility: none; display:none;}
+  }
+</style>
+
+<html>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+
+      const { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback} = React
+
+      const AutoTextArea = (props) => {
+        const textAreaRef = useRef(null);
+        const [text, setText] = useState("");
+        const [textAreaHeight, setTextAreaHeight] = useState("auto");
+        const [parentHeight, setParentHeight] = useState("auto");
+
+        useEffect(() => {
+          if(textAreaRef.current){
+            setParentHeight(`${textAreaRef.current.scrollHeight}px`);
+            setTextAreaHeight(`${textAreaRef.current.scrollHeight}px`);
+          }
+        }, [text]);
+
+        const onChangeHandler = (event) => {
+          setTextAreaHeight("auto");
+
+
+          if(textAreaRef.current){
+            setParentHeight(`${textAreaRef.current.scrollHeight}px`);
+          }
+
+          setText(event.target.value);
+
+          if (props.onChange) {
+            props.onChange(event);
+          }
+        };
+
+        return (
+          <div
+            style={{
+              minHeight: parentHeight,
+            }}
+          >
+            <textarea
+              {...props}
+              ref={textAreaRef}
+              rows={1}
+              style={{
+                height: textAreaHeight,
+                resize: "none",
+              }}
+              onChange={onChangeHandler}
+            />
+          </div>
+        );
+      };
+
+      const App = (props) => {
+
+
+
+        const [jwtToken, setJwtToken] = useState("");
+        const [userId] = useState(5);
+
+        const [topLocationOfToolBar, setTopLocationOfToolBar] = useState(100);
+        const [someState, setSomeState] = useState(null);
+        const [questionList, setQuestionList] = useState([
+          {
+            id:1,
+            title: "",
+            question_type: "multi_choice",
+            options: [
+              {
+                title: "", //id has not been given here yet.
+                desc: "no desc"
+              },
+              {
+                title: "",
+                desc: "no desc"
+              },
+            ]
+          }
+        ]);
+
+        const prevQuestionList = usePrevious(questionList);
+
+        const [go] = useState('');
+        const [location, setLocation] = useState(100);
+        const [title, setTitle] = useState("Default Title");
+        const [detail, setDetail] = useState("detail");
+        const [bottomOfPage, setBottomOfPage] = useState(null);
+        const [toastMessage, setToastMessage] = useState("");
+        const [showToast, setShowToast] = useState(false);
+        const [toastTimeOut, setToastTimeOut] = useState(null);
+        const [cout] = useState(0);
+        const [load, setLoad] = useState(false);
+
+        function usePrevious(value) {
+          const ref = useRef();
+          useEffect(() => {
+            ref.current = value;
+          });
+          return ref.current;
+        }
+
+        function makeid(length) {
+           var result           = '';
+           var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+           var charactersLength = characters.length;
+           for ( var i = 0; i < length; i++ ) {
+              result += characters.charAt(Math.floor(Math.random() * charactersLength));
+           }
+           return result;
+        }
+
+        const isBrowser = typeof window !== `undefined`
+        function getScrollPosition({ element, useWindow }) {
+          if (!isBrowser) return { x: 0, y: 0 }
+
+          const target = element ? element.current : document.body
+          const position = target.getBoundingClientRect()
+
+          return useWindow
+            ? { x: window.scrollX, y: window.scrollY }
+            : { x: position.left, y: position.top }
+        }
+
+        //what is useRef? ->
+        function useScrollPosition(effect, deps, element, useWindow, wait) {
+          const position = useRef(getScrollPosition({ useWindow }))
+
+          let throttleTimeout = null
+
+          const callBack = () => {
+            const currPos = getScrollPosition({ element, useWindow })
+            effect({ prevPos: position.current, currPos })
+            position.current = currPos
+            throttleTimeout = null
+          }
+
+          useLayoutEffect(() => {
+            const handleScroll = () => {
+              if (wait) {
+                if (throttleTimeout === null) {
+                  throttleTimeout = setTimeout(callBack, wait)
+                }
+              } else {
+                callBack()
+              }
+            }
+
+            window.addEventListener('scroll', handleScroll)
+
+            return () => window.removeEventListener('scroll', handleScroll)
+          }, deps)
+        }
+
+        const [hideOnScroll, setHideOnScroll] = useState(true);
+
+        useEffect(() => {
+          console.log('----- some state');
+          console.log(someState);
+        },[someState]);
+
+        useEffect(() => {
+          // document.body.style.backgroundColor = "red";
+          document.body.classList.add('bg_light_blue');
+        }, []);
+
+        const CustomToast = (props) => {
+          //add class or hide.
+          console.log('custom toast');
+          let customToastClass = "toastDefaultClass";
+          if(props.showToast){
+            customToastClass += " show";
+          }
+
+          console.log(customToastClass);
+          return (
+            <div className={customToastClass}
+            style={{position:"absolute", left:0, right:0, textAlign: "center",
+            width:200,
+            margin: "0 auto",
+            minWidth:200}}>
+              {props.message}
+            </div>
+          )
+          //how to do this?
+          //append..?
+        }
+
+        const toast = (message) => {
+          setToastMessage(message);
+          setShowToast(true);
+          setShowShowToast(true);
+          clearTimeout(toastTimeOut);
+
+          const timeout = setTimeout(() => {
+            setShowToast(false);
+          }, 3000)
+
+          setToastTimeOut(timeout);
+        }
+
+        //let's create simple toast here..?
+
+        const renderTop = () => {
+          return <div className="fit bg_white" style={{position:"absolute", top:0, left:0, height:100,}}>
+              <div className="flexFDR flexJCSB padding_20">
+                <div className="flexFDR flexVCenter">
+                  <img src="https://d2mkevusy1mb28.cloudfront.net/web/online_study/turnchat_logo.png"
+                  style={{width:30, height:30,}}/>
+                </div>
+                <div className="flexFDR flexVCenter">
+                  <div className="cursor_pointer"
+                  onClick = {(e) => {
+                    toast("no specific function added to this btn yet");
+                  }}
+                  >
+                    <img src="https://ringleimageassets.s3.ap-northeast-2.amazonaws.com/images/memo_dec_2019/config_purple.png"
+                      style={{width:30, height:30,}}
+                     />
+                  </div>
+                  <div className="btn-m btn-success ml-5"
+                  onClick = {(e) => {
+                    toast("no specific function added to this btn yet");
+                  }}
+                  >Send</div>
+                  <div className="cursor_pointer"
+                  onClick = {(e) => {
+                    toast("no specific function added to this btn yet");
+                  }}
+                  >
+                    <img src="https://d2mkevusy1mb28.cloudfront.net/web/single-01%403x.png"
+                    style={{width:40, height:40,}}
+                    /></div>
+                </div>
+              </div>
+            </div>
+        }
+
+        const renderBody = () => {
+          return <div className="mt-100 pt-20">
+              <div className="flexFDR fdc">
+                <div class="bg_white border_radius padding_20 flexFDR fdc">
+                  <AutoTextArea onChange={(e) => {
+                    setTitle(e.target.value)
+                  }} placeholder="Title" className="font_l no_border fit" value={title}/>
+
+
+                  <AutoTextArea onChange={(e) => {
+                    setDetail(e.target.value)
+                  }} placeholder="Title" className="font_l no_border fit" value={detail}/>
+
+                </div>
+                <hr/>
+                {renderQuestionList()}
+              </div>
+            </div>
+        }
+
+        const RenderToolBar = () => {
+
+          console.log('rendering..');
+          const position = useRef(getScrollPosition({ null }))
+          const [locationOfSomething, setLocationOfSomething] = useState(-position.current.y + 200);
+          useScrollPosition(({ prevPos, currPos }) => {
+            setLocationOfSomething(-currPos.y + 200);
+          }, [], null, null, 500)
+
+          return <div
+            style={{position:"absolute", top: locationOfSomething, right:-60, width:50, height:300}}
+            className="bg_white border_radius border_gray floatingRightBar fdc flexCenter">
+            <div onClick={(e) => {
+              createDefaultQuestion();
+            }} className="cursor_pointer border_gray flexCenter mt-10" style={{width:40, height:40, borderRadius:40,}}>
+              +
+            </div>
+            <div onClick={(e) => {
+              toast("no specific function added to this btn yet");
+            }} className="cursor_pointer border_gray flexCenter mt-10" style={{width:40, height:40, borderRadius:40,}}>
+            </div>
+
+            <div onClick={(e) => {
+              toast("no specific function added to this btn yet");
+            }} className="cursor_pointer border_gray flexCenter mt-10" style={{width:40, height:40, borderRadius:40,}}>
+            </div>
+          </div>
+        };
+
+        const renderQuestionList = () => {
+          let list = [];
+          questionList.forEach(obj =>
+            {
+                if (obj.question_type == "short_answer"){
+                  list.push(renderShortAnswer(obj));
+                }
+
+                if (obj.question_type == "multi_choice"){
+                  list.push(renderMultiChoice(obj));
+                }
+
+                if (obj.question_type == "checkbox"){
+                  list.push(renderCheckbox(obj));
+                }
+
+                if (obj.question_type == "long_answer"){
+                  list.push(renderLongAnswer(obj));
+                }
+            }
+          )
+
+          return <div>
+              {list}
+          </div>
+        }
+
+        const remove = (questionObj) => {
+          var r = confirm("지울까요?");
+          if (r == true) {
+            const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+            let newQuestionList = [...questionList];
+            newQuestionList.splice(elementsIndex, 1);
+            setQuestionList(newQuestionList);
+          }
+        }
+
+        const renderShortAnswer = (questionObj) => {
+          return <div className="bg_white flexFDR fdc mt-10 border_radius border_mid_gray padding_20 pr">
+
+              <div className="flexFDR fdc" style={{marginRight:120}}>
+                <input value={questionObj.title} className="no_border font_l bold fit mt-5" placeholder="QuestionText"
+                onChange={(e) => {
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], title: e.target.value}
+                  setQuestionList(newQuestionList);
+                }}
+                />
+
+                <AutoTextArea value={questionObj.desc} className="no_border font_s bold fit mt-5" placeholder="input desc"
+                onChange={(e) => {
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], desc: e.target.value}
+                  setQuestionList(newQuestionList);
+                }}
+                />
+
+                <AutoTextArea value={questionObj.placeholder} className="no_border font_s bold fit mt-5" placeholder="Placeholder(서베이를 하는 사람이 보는 칸 예제)"
+                onChange={(e) => {
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], placeholder: e.target.value}
+                  setQuestionList(newQuestionList);
+                }}
+                />
+              </div>
+
+              <div onClick={(e) => {remove(questionObj)}}
+                className="btn-s btn-danger font_s" style={{position:"absolute", top:20, right:20,}}>
+                Remove
+              </div>
+
+              <div style={{position:"absolute", top:60, right:20,}}>
+                {renderSelectQuestionStyle(questionObj)}
+              </div>
+            </div>
+        }
+
+        const renderLongAnswer = (questionObj) => {
+          return <div className="bg_white flexFDR fdc mt-10 border_radius border_mid_gray padding_20 pr">
+
+            <div className="flexFDR fdc" style={{marginRight:120}}>
+              <input value={questionObj.title} className="no_border font_l bold fit" placeholder="QuestionText"
+              onChange={(e) => {
+                const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                let newQuestionList = [...questionList];
+                newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], title: e.target.value}
+                setQuestionList(newQuestionList);
+              }}
+              />
+
+              <AutoTextArea value={questionObj.desc} className="no_border font_s bold fit mt-10" style={{marginRight:120,}} placeholder="input desc"
+              onChange={(e) => {
+                const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                let newQuestionList = [...questionList];
+                newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], desc: e.target.value}
+                setQuestionList(newQuestionList);
+              }}
+              />
+
+              <AutoTextArea value={questionObj.placeholder} className="no_border font_s bold fit mt-10" style={{marginRight:120,}} placeholder="Placeholder(서베이를 하는 사람이 보는 칸 예제)"
+              onChange={(e) => {
+                const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                let newQuestionList = [...questionList];
+                newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], placeholder: e.target.value}
+                setQuestionList(newQuestionList);
+              }}
+              />
+            </div>
+
+            <div onClick={(e) => {remove(questionObj)}}
+              className="btn-s btn-danger font_s" style={{position:"absolute", top:20, right:20,}}>
+              Remove
+            </div>
+
+            <div style={{position:"absolute", top:60, right:20,}}>
+              {renderSelectQuestionStyle(questionObj)}
+            </div>
+          </div>
+        }
+
+        const renderMultiChoice = (questionObj) => {
+
+          const _questionList = () => {
+            return (questionObj.options.map((option,index) =>
+              <div className="flexFDR flexVCenter mt-10">
+                <label>
+                <input type="radio" name={`radio_${questionObj.id}`} className="" />
+                  <input
+                    className="font_ml"
+                    attr={index}
+                    value={option.title} onChange={(e) => {
+                    let options = [...questionObj.options];
+                    options[index] = {title:e.target.value};
+                    const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                    let newQuestionList = [...questionList];
+                    newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], options: options}
+                    setQuestionList(newQuestionList);
+                  }} />
+                </label>
+
+                <div className="flexCenter bg_mid_gray ml-20 cursor_pointer" style={{width:20, height:20, borderRadius:20}} onClick={(e) => {
+                  let options = [...questionObj.options];
+                  options.splice(index,1);
+
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+
+                  //if options length == 0..
+                  if (options.length == 0){
+                    newQuestionList.splice(elementsIndex, 1);
+                    setQuestionList(newQuestionList);
+                  }else{
+                    newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], options: options}
+                    setQuestionList(newQuestionList);
+                  }
+                }}>-</div>
+              </div>
+            ))
+          }
+
+          return <div className="bg_white flexFDR fdc mt-10 border_radius border_mid_gray padding_20 pr">
+
+              <div style={{marginRight:120}}>
+                <span className="font_l bold">
+                  <input value={questionObj.title} className="no_border font_l bold fit mt-5" placeholder="Question Text"
+
+                  onChange={(e) => {
+                    const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                    let newQuestionList = [...questionList];
+                    newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], title: e.target.value}
+                    setQuestionList(newQuestionList);
+                  }}
+                  />
+                </span>
+                <AutoTextArea value={questionObj.desc} className="no_border font_s bold fit mt-5" placeholder="input desc"
+                onChange={(e) => {
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], desc: e.target.value}
+                  setQuestionList(newQuestionList);
+                }}
+                />
+              </div>
+
+              <div className="mt-5">
+                {_questionList()}
+              </div>
+              <div className="flexEnd" style={{display:"flex", justifyContent:"flex-end"}}>
+                <div className="font_xxl bg_primary flexCenter color_white" style={{width:50, height:50, borderRadius:50,}}
+                onClick={(e) => {
+                  let options = [...questionObj.options];
+                  options[options.length] = {title:""};
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], options: options}
+                  setQuestionList(newQuestionList);
+                }}
+                >+</div>
+              </div>
+
+              <div onClick={(e) => {remove(questionObj)}}
+                className="btn-s btn-danger font_s" style={{position:"absolute", top:20, right:20,}}>
+                Remove
+              </div>
+
+              <div style={{position:"absolute", top:60, right:20,}}>
+                {renderSelectQuestionStyle(questionObj)}
+              </div>
+          </div>
+        }
+
+        const renderCheckbox = (questionObj) => {
+          const _questionList = () => {
+            return (questionObj.options.map((option,index) =>
+              <div className="flexFDR flexVCenter mt-10">
+                <label>
+                <input type="checkbox" name={`radio_${questionObj.id}`} className="" />
+                  <input
+                    className="font_ml"
+                    attr={index}
+                    value={option.title} onChange={(e) => {
+                    let options = [...questionObj.options];
+                    options[index] = {title:e.target.value};
+                    const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                    let newQuestionList = [...questionList];
+                    newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], options: options}
+                    setQuestionList(newQuestionList);
+                  }} />
+                </label>
+
+                <div className="flexCenter bg_mid_gray ml-20 cursor_pointer" style={{width:20, height:20, borderRadius:20}} onClick={(e) => {
+                  let options = [...questionObj.options];
+                  options.splice(index,1);
+
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+
+                  //if options length == 0..
+                  if (options.length == 0){
+                    newQuestionList.splice(elementsIndex, 1);
+                    setQuestionList(newQuestionList);
+                  }else{
+                    newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], options: options}
+                    setQuestionList(newQuestionList);
+                  }
+                }}>-</div>
+              </div>
+            ))
+          }
+
+          return <div className="bg_white flexFDR fdc mt-10 border_radius border_mid_gray padding_20 pr">
+              <span className="font_l bold">
+                <input value={questionObj.title} className="no_border font_l bold" placeholder="title"
+                onChange={(e) => {
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], title: e.target.value}
+                  setQuestionList(newQuestionList);
+                }}
+                />
+              </span>
+              <AutoTextArea value={questionObj.desc} className="no_border font_s bold" style={{marginRight:120,}} placeholder="input desc"
+              onChange={(e) => {
+                const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                let newQuestionList = [...questionList];
+                newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], desc: e.target.value}
+                setQuestionList(newQuestionList);
+              }}
+              />
+              <div className="mt-5">
+                {_questionList()}
+              </div>
+              <div className="flexEnd" style={{display:"flex", justifyContent:"flex-end"}}>
+                <div className="btn-m btn-success font_m"
+                onClick={(e) => {
+                  let options = [...questionObj.options];
+                  options[options.length] = {title:""};
+                  const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+                  let newQuestionList = [...questionList];
+                  newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex], options: options}
+                  setQuestionList(newQuestionList);
+                }}
+                >Add Button</div>
+              </div>
+
+              <div onClick={(e) => {remove(questionObj)}}
+                className="btn-s btn-danger font_s" style={{position:"absolute", top:20, right:20,}}>
+                Remove
+              </div>
+
+              <div style={{position:"absolute", top:60, right:20,}}>
+                {renderSelectQuestionStyle(questionObj)}
+              </div>
+          </div>
+        }
+
+        const renderSelectQuestionStyle = (questionObj) => {
+          return (elementSelectQuestionStyle((questionType) => {
+            const elementsIndex = questionList.findIndex(element => element.id == questionObj.id)
+            let newQuestionList = [...questionList];
+            newQuestionList[elementsIndex] = {...newQuestionList[elementsIndex],
+              question_type: questionType
+            }
+            setQuestionList(newQuestionList);
+          }, questionObj.question_type));
+        }
+
+        const elementSelectQuestionStyle = (callback, questionType) => {
+          return (
+            <select
+            value={questionType}
+            onChange={(e) => {
+              callback(e.target.value);
+            }}>
+              <option value="multi_choice">
+                MultiChoice
+              </option>
+              <option value="checkbox">
+                checkbox
+              </option>
+              <option value="short_answer">
+                Short Answer
+              </option>
+              <option value="long_answer">
+                Long Answer
+              </option>
+            </select>
+          )
+        }
+
+        const createDefaultQuestion = () => {
+          const defaultQuestion = {
+            id: makeid(3),
+            title: "",
+            question_type: "multi_choice",
+            options: [
+              {
+                title: "", //id has not been given here yet.
+              },
+              {
+                title: ""
+              },
+            ]
+          };
+
+          setQuestionList((prev) => [...prev, defaultQuestion])
+          //and to bottom
+          bottomOfPage.scrollIntoView({behavior:"smooth"});
+        }
+
+        const submit = useCallback(() => {
+
+          console.log(title);
+          console.log(detail);
+          console.log(questionList);
+
+          setLoad(true);
+
+          console.log(detail);
+
+          fetch('/api/v3/survey/create', {
+            body: JSON.stringify({
+              title: title,
+              detail: detail,
+              question_list: questionList
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'bearer ' + jwtToken
+            },
+            method: 'POST',
+          }).then(response => response.json())
+            .then(data => {
+            console.log(data);
+            window.location = `/api/v3/survey/${data.code}`;
+            setLoad(false);
+          })
+
+        },[title, detail, questionList]);
+
+        return (
+          <div className="bg_light_blue">
+            {renderTop()}
+            <div className="pr" style={{margin: '0 auto', width:900}}>
+              {renderBody()}
+              <RenderToolBar
+              />
+            </div>
+
+            <div className="flexCenter mt-20" ref={(el) => {setBottomOfPage(el);}}>
+              <div
+              className="btn-m btn-success"
+              onClick={(e) =>{submit();}}>Submit</div>
+            </div>
+            <CustomToast
+              message={toastMessage}
+              showToast={showToast}
+            />
+
+            {load?
+              <div id="common_spinner" style={{width:'100vw', height:'100vh', top: 0, left: 0, backgroundColor:"rgba(0,0,0,0.0)", zIndex:200000, position:'fixed',}}>
+                <div className="flexCenter" style={{width:"100%", height:"100%"}}>
+                  <div className="lds-ring"><div></div><div></div><div></div><div></div></div>
+                </div>
+              </div>
+              :
+              <div></div>
+            }
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById('root')
+      ReactDOM.render(<App />, rootElement)
+    </script>
+  </body>
+</html>

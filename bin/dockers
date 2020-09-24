@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+require 'thor'
+
+module Dockers
+  module Colorize
+    [
+      [:red,   '\e[0;31;49m'],
+      [:blue,  '\e[0;34;49m'],
+      [:green, '\e[0;32;49m'],
+      [:yellow,'\e[0;33;49m'],
+    ].each do |key, code|
+      module_eval <<-RUBY, __FILE__, __LINE__ + 1
+        def #{key}(msg)
+          "#{code}\#{msg}\e[0m"
+        end
+      RUBY
+    end
+  end
+
+  class CLI < Thor
+    include Colorize
+
+    desc "start", "개발환경의 docker-compose 시작한다. (시작하기전 최신 도커이미지로 갱신한다.)"
+    def start
+      system("docker-compose -f compose/local/docker-compose.yml pull")
+      system("docker-compose -f compose/local/docker-compose.yml up -d")
+      (puts(yellow "[#{Time.now}] MySql 부팅 확인") or sleep 2) while `mysql -h 127.0.0.1 --port=3306 -uroot -pasdf playground -e 'show databases'`.empty?
+      system("bin/migrate_localhost_db".tap{|o| puts(green o)})
+    end
+
+    desc "stop", "docker-compose 중지"
+    def stop
+      system("docker-compose -f compose/local/docker-compose.yml down".tap{|o| puts(green o)})
+    end
+
+    desc "restart", "docker-compose 재시작"
+    def restart
+      stop
+      start
+    end
+
+    desc "reset", "로컬 저장소를 제거하고 처음 상태로 재시작한다."
+    def reset
+      system("sudo ls /opt/persistent-storage".tap{|o| puts(green o)})
+      stop
+      system("sudo rm -rf /opt/persistent-storage/mysql-shawn".tap{|o| puts(green o)})
+      start
+    end
+  end
+end
+
+begin
+  Dockers::CLI.start
+rescue Dockers::CLI::Error => err
+  puts "ERROR: #{err.message}"
+  exit 1
+end

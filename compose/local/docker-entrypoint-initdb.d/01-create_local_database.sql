@@ -1,0 +1,2 @@
+create database playground collate utf8mb4_general_ci;
+create database playground_test collate utf8mb4_general_ci;

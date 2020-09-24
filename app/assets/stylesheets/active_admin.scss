@@ -1,0 +1,94 @@
+//= require activeadmin_addons/all
+// SASS variable overrides must be declared before loading up Active Admin's styles.
+//
+// To view the variables that Active Admin provides, take a look at
+// `app/assets/stylesheets/active_admin/mixins/_variables.scss` in the
+// Active Admin source.
+//
+// For example, to change the sidebar width:
+// $sidebar-width: 242px;
+
+// Active Admin's got SASS!
+@import "active_admin/mixins";
+@import "active_admin/base";
+
+// Overriding any non-variable SASS must be done after the fact.
+// For example, to change the default status-tag color:
+//
+//   .status_tag { background: #6090DB; }
+
+$pending-color: #FF9900;
+$suspect-color: #7f00ff;
+$rejected-color: #FF0000;
+$delayed-color: #2F4F4F;
+$approved-color: #08A510;
+$unknown-color: #CACACA;
+
+$score-red: #F14D39;
+$score-amber: #FFC371;
+$score-green: #008141;
+
+.status_tag {
+  &.almost_accepted { background: $pending-color; }
+  &.suspected { background: $suspect-color }
+  &.submitted { background: $pending-color; }
+  &.delayed { background: $delayed-color; }
+  &.rejected, &.stopped, &.paused, &.failed { background: $rejected-color; }
+  &.accepted, &.working { background: $approved-color; }
+  &.done { background: $approved-color; }
+
+  &.red { background-color: $score-red; }
+  &.amber { background-color: $score-amber; }
+  &.green { background-color: $score-green; }
+  &.unknown { background-color: $unknown-color; }
+
+  &.critical, &.dangerous { background: $rejected-color; }
+  &.moderate { background-color: $score-amber; }
+  &.low, &.safe { background-color: $score-green; }
+}
+
+.location_tag {
+  padding: 2px;
+  &.warning { color: #fff; background-color: #808080; }
+  &.normal { }
+}
+
+
+.col.col-amount {
+  text-align: right;
+}
+
+
+.panel_contents table tr.deleted td, table.index_table tr.deleted td{
+  background-color: #FFEEEE;
+}
+
+
+.sidebar_section .formtastic fieldset{
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.sidebar_section .formtastic .actions{
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar_section .formtastic .inputs ol li{
+  padding: 5px;
+}
+
+.sidebar_section .sidebar_cell {
+  padding: 0.1em;
+  box-shadow: black;
+  border-style: solid;
+  border-color: #DDD;
+
+  input[type=text]{
+    width: 90%;
+  }
+}
+
+

@@ -1,0 +1,29 @@
+version: "3.3"
+services:
+#  redis-master:
+#    image: bitnami/redis:5.0
+#    environment:
+#      - REDIS_REPLICATION_MODE=master
+#      - ALLOW_EMPTY_PASSWORD=yes
+#    volumes:
+#      - ./redis.conf.d/redis.conf:/opt/bitnami/redis/etc/redis.conf
+#    ports:
+#      - 6379:6379
+#    sysctls:
+#      - net.core.somaxconn=4096
+#    command:
+#      - redis-server
+#      - /opt/bitnami/redis/etc/redis.conf
+
+  # mysql -uroot -h 127.0.0.1 --port=3307 -pasdf -e "set password for 'root'@'localhost' = 'asdf';"
+  # mysql -uroot -h 127.0.0.1 --port=3307 -pasdf mysql < ./compose/local/docker-entrypoint-initdb.d/01-create_local_database.sql
+  db-server:
+    image: mysql:5.7
+    volumes:
+      - /opt/persistent-storage/mysql-shawn/:/var/lib/mysql/:cached
+      - /var/run/docker.sock:/var/run/docker.sock:cached
+    environment:
+      - MYSQL_ROOT_PASSWORD=asdf
+      - MYSQL_ROOT_HOST=%
+    ports:
+      - "3307:3306"

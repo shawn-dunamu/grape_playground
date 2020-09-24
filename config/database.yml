@@ -1,0 +1,26 @@
+defaults: &defaults
+  adapter: mysql2
+  encoding: utf8mb4
+  charset: utf8mb4
+  collation: utf8mb4_unicode_ci
+  host:     <%= ENV['DATABASE_HOST']     || '127.0.0.1' %>
+  port:     <%= ENV['DATABASE_PORT']     || 3306 %>
+  database: <%= ENV['DATABASE_NAME']     || 'playground' %>
+  username: <%= ENV['DATABASE_USERNAME'] || 'root' %>
+  password: <%= ENV['DATABASE_PASSWORD'] || 'asdf' %>
+  pool:     <%= ENV['DATABASE_POOL_SIZE']|| 10 %>
+  reconnect: true
+
+development:
+  <<: *defaults
+
+test:
+  <<: *defaults
+  database: playground_test
+
+production:
+  <<: *defaults
+  host:     <%= ENV['DATABASE_HOST'] %>
+  database: <%= ENV['DATABASE_NAME'] %>
+  username: <%= ENV['DATABASE_USERNAME'] %>
+  password: <%= ENV['DATABASE_PASSWORD'] %>

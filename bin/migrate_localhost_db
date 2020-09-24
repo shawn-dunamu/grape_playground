@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+def git_branch
+  `git rev-parse --abbrev-ref HEAD`.strip
+end
+
+def run
+  # bin/rails db:create
+  # bin/rails parallel:create
+  # bin/rails parallel:migrate
+  <<~NOTE.split("\n").each {|cmd| puts cmd; system cmd}
+    bundle exec spring stop
+    bin/rails db:migrate
+  NOTE
+end
+
+run
