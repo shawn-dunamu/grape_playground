@@ -21,6 +21,8 @@ tmp
 
 .envrc
 
+config/master.key
+
 # Ignore all config files
 #/config/application.yml
 #/config/database.yml
