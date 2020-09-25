@@ -10,14 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_09_24_085906) do
+ActiveRecord::Schema.define(version: 2020_09_25_020130) do
+
+  create_table "optional_questions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
+    t.bigint "survey_question_id"
+    t.string "question"
+    t.integer "order"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["survey_question_id"], name: "index_optional_questions_on_survey_question_id"
+  end
 
   create_table "survey_questions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
     t.bigint "survey_id"
     t.string "type"
     t.string "title", null: false
     t.text "desc"
-    t.string "aasm_state"
     t.json "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -34,5 +42,6 @@ ActiveRecord::Schema.define(version: 2020_09_24_085906) do
     t.index ["uuid"], name: "index_surveys_on_uuid", unique: true
   end
 
+  add_foreign_key "optional_questions", "survey_questions"
   add_foreign_key "survey_questions", "surveys"
 end
