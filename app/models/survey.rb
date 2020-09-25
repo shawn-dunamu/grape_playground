@@ -27,6 +27,25 @@ class Survey < ApplicationRecord
     end
   end
 
+  # 폼 생성을 수락할수 있는 권한 체크, 등을 검증
+  def acceptable?
+    #권한 체크하여 raise 처리
+    raise ::V1::Exceptions::SurveyAcceptAuthorizeFail.new if true
+
+    true
+  end
+
+  def rejectable?
+    true
+  end
+
+  # Accept, Reject 됬을때, Callback Event
+  # 유저에게 알림? 등
+  def send_notification
+    # Slack? Push? Email?
+    puts 'SlackNotify'
+  end
+
 
   class << self
     def submit!(params)

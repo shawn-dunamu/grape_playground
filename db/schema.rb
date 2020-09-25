@@ -26,6 +26,7 @@ ActiveRecord::Schema.define(version: 2020_09_25_020130) do
     t.string "type"
     t.string "title", null: false
     t.text "desc"
+    t.integer "order"
     t.json "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

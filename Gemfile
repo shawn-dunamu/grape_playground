@@ -32,6 +32,7 @@ gem 'browser'
 
 # ActiveRecord & ActiveModel
 gem 'aasm'
+gem 'after_commit_everywhere'
 gem 'enumerize'
 gem 'paranoia', '~> 2.4'
 
